@@ -10,6 +10,7 @@ This is just a simple game project, not real gambling.
 
 - Main menu with a separate game-select screen
 - Menus refresh after each valid input to reduce terminal clutter
+- Saves your bankroll in `Documents/simple-python-casino-save`
 - Playable roulette mode
 - Playable five-card poker mode
 - Playable blackjack mode

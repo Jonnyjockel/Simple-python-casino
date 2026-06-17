@@ -1,5 +1,6 @@
 import os
 import random
+from pathlib import Path
 
 
 RED_NUMBERS = {
@@ -14,10 +15,30 @@ RANK_NAMES = {
     13: "King",
     14: "Ace",
 }
+SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
+STARTING_BANKROLL = 100.0
 
 
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
+
+
+def load_bankroll():
+    try:
+        SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if not SAVE_FILE.exists():
+            save_bankroll(STARTING_BANKROLL)
+            return STARTING_BANKROLL
+
+        saved_value = float(SAVE_FILE.read_text(encoding="utf-8").strip())
+        return saved_value
+    except (OSError, ValueError):
+        return STARTING_BANKROLL
+
+
+def save_bankroll(bankroll):
+    SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SAVE_FILE.write_text(format_money(bankroll), encoding="utf-8")
 
 
 def color_for(number):
@@ -85,7 +106,7 @@ def place_bet(bankroll):
     if bet_type == "number":
         bet_target = ask_int("Pick a number from 0 to 36: ", 0, 36)
 
-    amount = ask_int(f"Bet amount (bankroll ${bankroll}): $", 1, bankroll)
+    amount = ask_int(f"Bet amount (bankroll ${format_money(bankroll)}): $", 1, bankroll)
     return bet_type, bet_target, amount
 
 
@@ -111,10 +132,10 @@ def resolve_bet(bet_type, bet_target, amount, result):
 def play_roulette():
     print("Simple Python Roulette")
     print("----------------------")
-    bankroll = 100
+    bankroll = load_bankroll()
 
     while bankroll > 0:
-        print(f"\nYou have ${bankroll}.")
+        print(f"\nYou have ${format_money(bankroll)}.")
         bet_type, bet_target, amount = place_bet(bankroll)
 
         print("\nSpinning...")
@@ -124,6 +145,7 @@ def play_roulette():
 
         won, payout = resolve_bet(bet_type, bet_target, amount, result)
         bankroll += payout
+        save_bankroll(bankroll)
 
         if won:
             print(f"You won ${payout}!")
@@ -138,7 +160,8 @@ def play_roulette():
         if again == "n":
             break
 
-    print(f"\nFinal bankroll: ${bankroll}")
+    save_bankroll(bankroll)
+    print(f"\nFinal bankroll: ${format_money(bankroll)}")
     print("Thanks for playing.")
 
 
@@ -213,11 +236,11 @@ def compare_hands(player_hand, dealer_hand):
 def play_poker():
     print("\nSimple Five-Card Poker")
     print("----------------------")
-    bankroll = 100
+    bankroll = load_bankroll()
 
     while bankroll > 0:
-        print(f"\nYou have ${bankroll}.")
-        amount = ask_int(f"Bet amount (bankroll ${bankroll}): $", 1, bankroll)
+        print(f"\nYou have ${format_money(bankroll)}.")
+        amount = ask_int(f"Bet amount (bankroll ${format_money(bankroll)}): $", 1, bankroll)
 
         deck = build_deck()
         random.shuffle(deck)
@@ -239,6 +262,7 @@ def play_poker():
             print(f"You lost ${amount}.")
         else:
             print("Push. Nobody wins.")
+        save_bankroll(bankroll)
 
         if bankroll <= 0:
             print("\nYou are out of money. Game over.")
@@ -248,7 +272,8 @@ def play_poker():
         if again == "n":
             break
 
-    print(f"\nFinal bankroll: ${bankroll}")
+    save_bankroll(bankroll)
+    print(f"\nFinal bankroll: ${format_money(bankroll)}")
     print("Thanks for playing.")
 
 
@@ -287,7 +312,7 @@ def show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card):
 def play_blackjack():
     print("\nSimple Blackjack")
     print("----------------")
-    bankroll = 100.0
+    bankroll = load_bankroll()
 
     while bankroll > 0:
         print(f"\nYou have ${format_money(bankroll)}.")
@@ -346,6 +371,7 @@ def play_blackjack():
                     print(f"You lost ${amount}.")
                 else:
                     print("Push. Nobody wins.")
+        save_bankroll(bankroll)
 
         if bankroll <= 0:
             print("\nYou are out of money. Game over.")
@@ -356,6 +382,7 @@ def play_blackjack():
             break
 
     print(f"\nFinal bankroll: ${format_money(bankroll)}")
+    save_bankroll(bankroll)
     print("Thanks for playing.")
 
 
