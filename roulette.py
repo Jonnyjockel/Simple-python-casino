@@ -18,6 +18,8 @@ RANK_NAMES = {
 SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
 SOUNDS_DIR = Path(__file__).parent / "sounds"
 PLAY_SOUND_FILE = SOUNDS_DIR / "play.wav"
+WIN_SOUND_FILE = SOUNDS_DIR / "win.wav"
+LOSS_SOUND_FILE = SOUNDS_DIR / "loss.wav"
 STARTING_BANKROLL = 100.0
 LOAN_AMOUNT = 100.0
 LOAN_ROUNDS = 5
@@ -28,16 +30,28 @@ def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def play_menu_sound():
-    if os.name != "nt" or not PLAY_SOUND_FILE.exists():
+def play_sound(sound_file):
+    if os.name != "nt" or not sound_file.exists():
         return
 
     try:
         import winsound
 
-        winsound.PlaySound(str(PLAY_SOUND_FILE), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        winsound.PlaySound(str(sound_file), winsound.SND_FILENAME | winsound.SND_ASYNC)
     except RuntimeError:
         pass
+
+
+def play_menu_sound():
+    play_sound(PLAY_SOUND_FILE)
+
+
+def play_win_sound():
+    play_sound(WIN_SOUND_FILE)
+
+
+def play_loss_sound():
+    play_sound(LOSS_SOUND_FILE)
 
 
 def load_game_state():
@@ -255,8 +269,10 @@ def play_roulette():
         bankroll += payout
 
         if won:
+            play_win_sound()
             print(f"You won ${payout}!")
         else:
+            play_loss_sound()
             print(f"You lost ${amount}.")
 
         bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)
@@ -374,9 +390,11 @@ def play_poker():
 
         if result > 0:
             bankroll += amount
+            play_win_sound()
             print(f"You won ${amount}!")
         elif result < 0:
             bankroll -= amount
+            play_loss_sound()
             print(f"You lost ${amount}.")
         else:
             print("Push. Nobody wins.")
@@ -462,9 +480,11 @@ def play_blackjack():
             elif player_blackjack:
                 winnings = amount * 1.5
                 bankroll += winnings
+                play_win_sound()
                 print(f"Blackjack! You won ${format_money(winnings)}.")
             else:
                 bankroll -= amount
+                play_loss_sound()
                 print(f"Dealer has blackjack. You lost ${amount}.")
         else:
             while blackjack_hand_value(player_hand) < 21:
@@ -478,6 +498,7 @@ def play_blackjack():
             player_total = blackjack_hand_value(player_hand)
             if player_total > 21:
                 bankroll -= amount
+                play_loss_sound()
                 print(f"You busted with {player_total}. You lost ${amount}.")
             else:
                 show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card=False)
@@ -489,12 +510,15 @@ def play_blackjack():
                 dealer_total = blackjack_hand_value(dealer_hand)
                 if dealer_total > 21:
                     bankroll += amount
+                    play_win_sound()
                     print(f"Dealer busted with {dealer_total}. You won ${amount}!")
                 elif player_total > dealer_total:
                     bankroll += amount
+                    play_win_sound()
                     print(f"You won ${amount}!")
                 elif player_total < dealer_total:
                     bankroll -= amount
+                    play_loss_sound()
                     print(f"You lost ${amount}.")
                 else:
                     print("Push. Nobody wins.")
@@ -564,8 +588,10 @@ def play_slots():
         print(message)
 
         if payout > 0:
+            play_win_sound()
             print(f"You won ${format_money(payout)}!")
         else:
+            play_loss_sound()
             print(f"You lost ${amount}.")
 
         bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)

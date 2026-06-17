@@ -12,7 +12,7 @@ This is just a simple game project, not real gambling.
 - Menus refresh after each valid input to reduce terminal clutter
 - Saves your bankroll and active loan state in `Documents/simple-python-casino-save`
 - Lets broke players take a `$100` loan that is automatically paid back after `5` played rounds
-- Plays `sounds/play.wav` on Windows when selecting `Play`, if that file exists
+- Plays optional Windows `.wav` sounds from `sounds/` for Play, wins, and losses
 - Playable roulette mode
 - Playable five-card poker mode
 - Playable blackjack mode

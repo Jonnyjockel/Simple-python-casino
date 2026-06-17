@@ -1,11 +1,13 @@
 # Sounds
 
-Put a custom `.wav` file named `play.wav` in this folder.
+Put custom `.wav` files in this folder.
 
-When someone selects `Play` from the main menu on Windows, the game will play:
+Supported filenames:
 
 ```text
-sounds/play.wav
+play.wav  - plays when selecting Play from the main menu
+win.wav   - plays when winning money
+loss.wav  - plays when losing money
 ```
 
-If the file is missing, the game continues silently.
+If a file is missing, the game continues silently.
