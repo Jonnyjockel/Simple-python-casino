@@ -14,6 +14,7 @@ This is just a simple game project, not real gambling.
 - Playable roulette mode
 - Playable five-card poker mode
 - Playable blackjack mode
+- Playable slots mode
 - Starts you with a `$100` bankroll
 - Roulette supports bets on:
   - red / black
@@ -24,6 +25,7 @@ This is just a simple game project, not real gambling.
   - exact number bets pay `35:1`
 - Poker deals five cards to you and five to the dealer, ranks both hands, and pays `1:1`
 - Blackjack supports hit/stand, dealer drawing to `17`, busts, pushes, and blackjack paying `3:2`
+- Slots spins three symbols with payouts for two or three matches
 - No external dependencies
 
 ## Run
@@ -38,6 +40,3 @@ On some systems, use:
 python3 roulette.py
 ```
 
-## Note
-
-This is just a simple game project, not real gambling.

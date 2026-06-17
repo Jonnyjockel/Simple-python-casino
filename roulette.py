@@ -17,6 +17,7 @@ RANK_NAMES = {
 }
 SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
 STARTING_BANKROLL = 100.0
+SLOT_SYMBOLS = ["Cherry", "Lemon", "Bell", "Seven", "Diamond"]
 
 
 def clear_screen():
@@ -411,6 +412,67 @@ def play_blackjack():
     print("Thanks for playing.")
 
 
+def spin_slots():
+    return [random.choice(SLOT_SYMBOLS) for _symbol in range(3)]
+
+
+def resolve_slots_spin(reels, amount):
+    unique_symbols = set(reels)
+    if len(unique_symbols) == 1:
+        symbol = reels[0]
+        multiplier = {
+            "Seven": 10,
+            "Diamond": 8,
+            "Bell": 5,
+            "Cherry": 4,
+            "Lemon": 3,
+        }[symbol]
+        return amount * multiplier, f"Triple {symbol}! Pays {multiplier}:1."
+
+    if len(unique_symbols) == 2:
+        return amount * 2, "Two matching symbols! Pays 2:1."
+
+    return -amount, "No match."
+
+
+def play_slots():
+    print("\nSimple Slots")
+    print("------------")
+    bankroll = load_bankroll()
+
+    while bankroll > 0:
+        print(f"\nYou have ${format_money(bankroll)}.")
+        print("Symbols: Cherry, Lemon, Bell, Seven, Diamond")
+        print("Three matches pay 3:1 to 10:1. Two matches pay 2:1.")
+        amount = ask_int(f"Bet amount (bankroll ${format_money(bankroll)}): $", 1, bankroll)
+
+        reels = spin_slots()
+        payout, message = resolve_slots_spin(reels, amount)
+        bankroll += payout
+        save_bankroll(bankroll)
+
+        print("\nSpinning...")
+        print("[ " + " | ".join(reels) + " ]")
+        print(message)
+
+        if payout > 0:
+            print(f"You won ${format_money(payout)}!")
+        else:
+            print(f"You lost ${amount}.")
+
+        if bankroll <= 0:
+            print("\nYou are out of money. Game over.")
+            break
+
+        again = ask_choice("Spin again? (y/n): ", ["y", "n"])
+        if again == "n":
+            break
+
+    print(f"\nFinal bankroll: ${format_money(bankroll)}")
+    save_bankroll(bankroll)
+    print("Thanks for playing.")
+
+
 def show_game_menu():
     while True:
         print("\nChoose a Game")
@@ -418,9 +480,10 @@ def show_game_menu():
         print("1. Roulette")
         print("2. Poker")
         print("3. Blackjack")
-        print("4. Back")
+        print("4. Slots")
+        print("5. Back")
 
-        choice = ask_choice("Choose an option: ", ["1", "2", "3", "4"])
+        choice = ask_choice("Choose an option: ", ["1", "2", "3", "4", "5"])
 
         if choice == "1":
             play_roulette()
@@ -428,6 +491,8 @@ def show_game_menu():
             play_poker()
         elif choice == "3":
             play_blackjack()
+        elif choice == "4":
+            play_slots()
         else:
             break
 
