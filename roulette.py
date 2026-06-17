@@ -1,5 +1,6 @@
 import os
 import random
+import subprocess
 from pathlib import Path
 
 
@@ -17,9 +18,9 @@ RANK_NAMES = {
 }
 SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
 SOUNDS_DIR = Path(__file__).parent / "sounds"
-PLAY_SOUND_FILE = SOUNDS_DIR / "play.wav"
-WIN_SOUND_FILE = SOUNDS_DIR / "win.wav"
-LOSS_SOUND_FILE = SOUNDS_DIR / "loss.wav"
+PLAY_SOUND_FILES = ["play.wav", "play.mp3", "play.m4a"]
+WIN_SOUND_FILES = ["win.wav", "win.mp3", "win.m4a"]
+LOSS_SOUND_FILES = ["loss.wav", "lose.wav", "loss.mp3", "lose.mp3", "loss.m4a", "lose.m4a"]
 STARTING_BANKROLL = 100.0
 LOAN_AMOUNT = 100.0
 LOAN_ROUNDS = 5
@@ -30,28 +31,63 @@ def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def play_sound(sound_file):
-    if os.name != "nt" or not sound_file.exists():
+def find_sound_file(file_names):
+    for file_name in file_names:
+        sound_file = SOUNDS_DIR / file_name
+        if sound_file.exists():
+            return sound_file
+    return None
+
+
+def play_with_media_player(sound_file):
+    sound_uri = sound_file.resolve().as_uri()
+    command = (
+        "Add-Type -AssemblyName PresentationCore; "
+        f"$player = New-Object System.Windows.Media.MediaPlayer; $player.Open('{sound_uri}'); "
+        "for ($i = 0; $i -lt 20 -and -not $player.NaturalDuration.HasTimeSpan; $i++) "
+        "{ Start-Sleep -Milliseconds 50 }; "
+        "$player.Play(); "
+        "if ($player.NaturalDuration.HasTimeSpan) "
+        "{ Start-Sleep -Milliseconds ([Math]::Ceiling($player.NaturalDuration.TimeSpan.TotalMilliseconds)) } "
+        "else { Start-Sleep -Milliseconds 2000 }; "
+        "$player.Close()"
+    )
+    creation_flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+    subprocess.Popen(
+        ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", command],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=creation_flags,
+    )
+
+
+def play_sound(file_names):
+    sound_file = find_sound_file(file_names)
+    if os.name != "nt" or sound_file is None:
         return
 
     try:
         import winsound
 
         winsound.PlaySound(str(sound_file), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        return
     except RuntimeError:
-        pass
+        try:
+            play_with_media_player(sound_file)
+        except OSError:
+            pass
 
 
 def play_menu_sound():
-    play_sound(PLAY_SOUND_FILE)
+    play_sound(PLAY_SOUND_FILES)
 
 
 def play_win_sound():
-    play_sound(WIN_SOUND_FILE)
+    play_sound(WIN_SOUND_FILES)
 
 
 def play_loss_sound():
-    play_sound(LOSS_SOUND_FILE)
+    play_sound(LOSS_SOUND_FILES)
 
 
 def load_game_state():
