@@ -16,6 +16,8 @@ RANK_NAMES = {
     14: "Ace",
 }
 SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
+SOUNDS_DIR = Path(__file__).parent / "sounds"
+PLAY_SOUND_FILE = SOUNDS_DIR / "play.wav"
 STARTING_BANKROLL = 100.0
 LOAN_AMOUNT = 100.0
 LOAN_ROUNDS = 5
@@ -24,6 +26,18 @@ SLOT_SYMBOLS = ["Cherry", "Lemon", "Bell", "Seven", "Diamond"]
 
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
+
+
+def play_menu_sound():
+    if os.name != "nt" or not PLAY_SOUND_FILE.exists():
+        return
+
+    try:
+        import winsound
+
+        winsound.PlaySound(str(PLAY_SOUND_FILE), winsound.SND_FILENAME | winsound.SND_ASYNC)
+    except RuntimeError:
+        pass
 
 
 def load_game_state():
@@ -607,6 +621,7 @@ def main():
         choice = ask_choice("Choose an option: ", ["1", "2"])
 
         if choice == "1":
+            play_menu_sound()
             show_game_menu()
         else:
             print("\nGoodbye.")
