@@ -77,7 +77,7 @@ def resolve_bet(bet_type, bet_target, amount, result):
     return won, payout
 
 
-def main():
+def play_roulette():
     print("Simple Python Roulette")
     print("----------------------")
     bankroll = 100
@@ -109,6 +109,31 @@ def main():
 
     print(f"\nFinal bankroll: ${bankroll}")
     print("Thanks for playing.")
+
+
+def show_coming_soon():
+    print("\nComing soon!")
+    print("A new gamemode will be added next to roulette later.")
+    input("Press Enter to return to the main menu...")
+
+
+def main():
+    while True:
+        print("\nCasino Main Menu")
+        print("----------------")
+        print("1. Play Roulette")
+        print("2. New Gamemode (coming soon)")
+        print("3. Quit")
+
+        choice = ask_choice("Choose an option: ", ["1", "2", "3"])
+
+        if choice == "1":
+            play_roulette()
+        elif choice == "2":
+            show_coming_soon()
+        else:
+            print("\nGoodbye.")
+            break
 
 
 if __name__ == "__main__":

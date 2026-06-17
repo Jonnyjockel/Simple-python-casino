@@ -4,6 +4,7 @@ A small terminal roulette game written in plain Python.
 
 ## Features
 
+- Main menu with roulette, a future gamemode slot, and quit
 - Starts you with a `$100` bankroll
 - Supports bets on:
   - red / black
