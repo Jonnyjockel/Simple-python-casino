@@ -96,11 +96,23 @@ def format_money(amount):
 
 def place_bet(bankroll):
     print("\nBet types:")
-    print("  red / black - pays 1:1")
-    print("  even / odd  - pays 1:1")
-    print("  number      - pays 35:1")
+    print("  1. red    - pays 1:1")
+    print("  2. black  - pays 1:1")
+    print("  3. even   - pays 1:1")
+    print("  4. odd    - pays 1:1")
+    print("  5. number - pays 35:1")
 
-    bet_type = ask_choice("What do you want to bet on? ", ["red", "black", "even", "odd", "number"])
+    bet_type = ask_choice(
+        "What do you want to bet on? ",
+        ["1", "2", "3", "4", "5", "red", "black", "even", "odd", "number"],
+    )
+    bet_type = {
+        "1": "red",
+        "2": "black",
+        "3": "even",
+        "4": "odd",
+        "5": "number",
+    }.get(bet_type, bet_type)
     bet_target = bet_type
 
     if bet_type == "number":
