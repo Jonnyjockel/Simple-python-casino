@@ -7,7 +7,7 @@ A small terminal casino game collection written in plain Python.
 - Main menu with a separate game-select screen
 - Playable roulette mode
 - Playable five-card poker mode
-- Blackjack menu slot marked as coming soon
+- Playable blackjack mode
 - Starts you with a `$100` bankroll
 - Roulette supports bets on:
   - red / black
@@ -17,6 +17,7 @@ A small terminal casino game collection written in plain Python.
   - even-money bets pay `1:1`
   - exact number bets pay `35:1`
 - Poker deals five cards to you and five to the dealer, ranks both hands, and pays `1:1`
+- Blackjack supports hit/stand, dealer drawing to `17`, busts, pushes, and blackjack paying `3:2`
 - No external dependencies
 
 ## Run

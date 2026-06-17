@@ -60,6 +60,12 @@ def format_hand(hand):
     return ", ".join(format_card(card) for card in hand)
 
 
+def format_money(amount):
+    if amount == int(amount):
+        return str(int(amount))
+    return f"{amount:.2f}"
+
+
 def place_bet(bankroll):
     print("\nBet types:")
     print("  red / black - pays 1:1")
@@ -239,10 +245,111 @@ def play_poker():
     print("Thanks for playing.")
 
 
-def show_coming_soon(game_name):
-    print("\nComing soon!")
-    print(f"{game_name} will be added later.")
-    input("Press Enter to return to the menu...")
+def blackjack_card_value(card):
+    rank, _suit = card
+    if rank == 14:
+        return 11
+    if rank >= 10:
+        return 10
+    return rank
+
+
+def blackjack_hand_value(hand):
+    total = sum(blackjack_card_value(card) for card in hand)
+    aces = sum(1 for rank, _suit in hand if rank == 14)
+
+    while total > 21 and aces:
+        total -= 10
+        aces -= 1
+
+    return total
+
+
+def is_blackjack(hand):
+    return len(hand) == 2 and blackjack_hand_value(hand) == 21
+
+
+def show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card):
+    print(f"\nYour hand:   {format_hand(player_hand)} ({blackjack_hand_value(player_hand)})")
+    if hide_dealer_card:
+        print(f"Dealer hand: {format_card(dealer_hand[0])}, Hidden Card")
+    else:
+        print(f"Dealer hand: {format_hand(dealer_hand)} ({blackjack_hand_value(dealer_hand)})")
+
+
+def play_blackjack():
+    print("\nSimple Blackjack")
+    print("----------------")
+    bankroll = 100.0
+
+    while bankroll > 0:
+        print(f"\nYou have ${format_money(bankroll)}.")
+        amount = ask_int(f"Bet amount (bankroll ${format_money(bankroll)}): $", 1, bankroll)
+
+        deck = build_deck()
+        random.shuffle(deck)
+        player_hand = [deck.pop(), deck.pop()]
+        dealer_hand = [deck.pop(), deck.pop()]
+
+        show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card=True)
+
+        player_blackjack = is_blackjack(player_hand)
+        dealer_blackjack = is_blackjack(dealer_hand)
+
+        if player_blackjack or dealer_blackjack:
+            show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card=False)
+            if player_blackjack and dealer_blackjack:
+                print("Both have blackjack. Push.")
+            elif player_blackjack:
+                winnings = amount * 1.5
+                bankroll += winnings
+                print(f"Blackjack! You won ${format_money(winnings)}.")
+            else:
+                bankroll -= amount
+                print(f"Dealer has blackjack. You lost ${amount}.")
+        else:
+            while blackjack_hand_value(player_hand) < 21:
+                action = ask_choice("Hit or stand? (h/s): ", ["h", "s"])
+                if action == "s":
+                    break
+
+                player_hand.append(deck.pop())
+                show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card=True)
+
+            player_total = blackjack_hand_value(player_hand)
+            if player_total > 21:
+                bankroll -= amount
+                print(f"You busted with {player_total}. You lost ${amount}.")
+            else:
+                show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card=False)
+                while blackjack_hand_value(dealer_hand) < 17:
+                    dealer_hand.append(deck.pop())
+                    print(f"Dealer hits: {format_card(dealer_hand[-1])}")
+                    print(f"Dealer total: {blackjack_hand_value(dealer_hand)}")
+
+                dealer_total = blackjack_hand_value(dealer_hand)
+                if dealer_total > 21:
+                    bankroll += amount
+                    print(f"Dealer busted with {dealer_total}. You won ${amount}!")
+                elif player_total > dealer_total:
+                    bankroll += amount
+                    print(f"You won ${amount}!")
+                elif player_total < dealer_total:
+                    bankroll -= amount
+                    print(f"You lost ${amount}.")
+                else:
+                    print("Push. Nobody wins.")
+
+        if bankroll <= 0:
+            print("\nYou are out of money. Game over.")
+            break
+
+        again = ask_choice("Play another blackjack hand? (y/n): ", ["y", "n"])
+        if again == "n":
+            break
+
+    print(f"\nFinal bankroll: ${format_money(bankroll)}")
+    print("Thanks for playing.")
 
 
 def show_game_menu():
@@ -251,7 +358,7 @@ def show_game_menu():
         print("-------------")
         print("1. Roulette")
         print("2. Poker")
-        print("3. Blackjack (coming soon)")
+        print("3. Blackjack")
         print("4. Back")
 
         choice = ask_choice("Choose an option: ", ["1", "2", "3", "4"])
@@ -261,7 +368,7 @@ def show_game_menu():
         elif choice == "2":
             play_poker()
         elif choice == "3":
-            show_coming_soon("Blackjack")
+            play_blackjack()
         else:
             break
 
