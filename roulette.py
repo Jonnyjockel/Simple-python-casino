@@ -1,3 +1,4 @@
+import os
 import random
 
 
@@ -13,6 +14,10 @@ RANK_NAMES = {
     13: "King",
     14: "Ace",
 }
+
+
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 def color_for(number):
@@ -38,6 +43,7 @@ def ask_int(prompt, minimum=None, maximum=None):
         if maximum is not None and number > maximum:
             print(f"Please enter at most {maximum}.")
             continue
+        clear_screen()
         return number
 
 
@@ -46,6 +52,7 @@ def ask_choice(prompt, choices):
     while True:
         answer = input(prompt).strip().lower()
         if answer in choices:
+            clear_screen()
             return answer
         print(f"Choose one of: {', '.join(sorted(choices))}")
 
