@@ -17,6 +17,8 @@ RANK_NAMES = {
 }
 SAVE_FILE = Path.home() / "Documents" / "simple-python-casino-save"
 STARTING_BANKROLL = 100.0
+LOAN_AMOUNT = 100.0
+LOAN_ROUNDS = 5
 SLOT_SYMBOLS = ["Cherry", "Lemon", "Bell", "Seven", "Diamond"]
 
 
@@ -24,22 +26,44 @@ def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def load_bankroll():
+def load_game_state():
     try:
         SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
         if not SAVE_FILE.exists():
-            save_bankroll(STARTING_BANKROLL)
-            return STARTING_BANKROLL
+            save_game_state(STARTING_BANKROLL)
+            return STARTING_BANKROLL, 0.0, 0
 
-        saved_value = float(SAVE_FILE.read_text(encoding="utf-8").strip())
-        return saved_value
+        content = SAVE_FILE.read_text(encoding="utf-8").strip()
+        if "=" not in content:
+            return float(content), 0.0, 0
+
+        values = {}
+        for line in content.splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                values[key.strip()] = value.strip()
+
+        bankroll = float(values.get("bankroll", STARTING_BANKROLL))
+        loan_amount = float(values.get("loan", 0))
+        loan_rounds = int(values.get("rounds_until_due", 0))
+        return bankroll, loan_amount, loan_rounds
     except (OSError, ValueError):
-        return STARTING_BANKROLL
+        return STARTING_BANKROLL, 0.0, 0
 
 
-def save_bankroll(bankroll):
+def save_game_state(bankroll, loan_amount=0.0, loan_rounds=0):
     SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    SAVE_FILE.write_text(format_money(bankroll), encoding="utf-8")
+    if loan_amount > 0:
+        content = "\n".join(
+            [
+                f"bankroll={format_money(bankroll)}",
+                f"loan={format_money(loan_amount)}",
+                f"rounds_until_due={loan_rounds}",
+            ]
+        )
+    else:
+        content = format_money(bankroll)
+    SAVE_FILE.write_text(content, encoding="utf-8")
 
 
 def color_for(number):
@@ -106,6 +130,48 @@ def format_money(amount):
     return f"{amount:.2f}"
 
 
+def offer_loan_if_broke(bankroll, loan_amount, loan_rounds):
+    if bankroll > 0:
+        return bankroll, loan_amount, loan_rounds, True
+
+    print("\nYou are out of money.")
+    if loan_amount > 0:
+        print("You already have an active loan, so you cannot take another one yet.")
+        return bankroll, loan_amount, loan_rounds, False
+
+    choice = ask_choice(f"Take a ${format_money(LOAN_AMOUNT)} loan? (y/n): ", ["y", "n"])
+    if choice == "n":
+        return bankroll, loan_amount, loan_rounds, False
+
+    bankroll += LOAN_AMOUNT
+    loan_amount = LOAN_AMOUNT
+    loan_rounds = LOAN_ROUNDS
+    save_game_state(bankroll, loan_amount, loan_rounds)
+    print(f"Loan approved. You must pay back ${format_money(loan_amount)} after {loan_rounds} rounds.")
+    return bankroll, loan_amount, loan_rounds, True
+
+
+def finish_round(bankroll, loan_amount, loan_rounds):
+    if loan_amount <= 0:
+        save_game_state(bankroll)
+        return bankroll, loan_amount, loan_rounds
+
+    loan_rounds -= 1
+    if loan_rounds > 0:
+        print(f"Loan repayment due in {loan_rounds} rounds.")
+        save_game_state(bankroll, loan_amount, loan_rounds)
+        return bankroll, loan_amount, loan_rounds
+
+    print(f"Loan repayment is due. Paying back ${format_money(loan_amount)}.")
+    bankroll -= loan_amount
+    if bankroll < 0:
+        bankroll = 0
+    loan_amount = 0.0
+    loan_rounds = 0
+    save_game_state(bankroll)
+    return bankroll, loan_amount, loan_rounds
+
+
 def place_bet(bankroll):
     print("\nBet types:")
     print("  1. red    - pays 1:1")
@@ -156,7 +222,11 @@ def resolve_bet(bet_type, bet_target, amount, result):
 def play_roulette():
     print("Simple Python Roulette")
     print("----------------------")
-    bankroll = load_bankroll()
+    bankroll, loan_amount, loan_rounds = load_game_state()
+    bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(bankroll, loan_amount, loan_rounds)
+    if not can_play:
+        print("Game over.")
+        return
 
     while bankroll > 0:
         print(f"\nYou have ${format_money(bankroll)}.")
@@ -169,22 +239,27 @@ def play_roulette():
 
         won, payout = resolve_bet(bet_type, bet_target, amount, result)
         bankroll += payout
-        save_bankroll(bankroll)
 
         if won:
             print(f"You won ${payout}!")
         else:
             print(f"You lost ${amount}.")
 
+        bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)
+
         if bankroll <= 0:
-            print("\nYou are out of money. Game over.")
-            break
+            bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(
+                bankroll, loan_amount, loan_rounds
+            )
+            if not can_play:
+                print("Game over.")
+                break
 
         again = ask_choice("Play another round? (y/n): ", ["y", "n"])
         if again == "n":
             break
 
-    save_bankroll(bankroll)
+    save_game_state(bankroll, loan_amount, loan_rounds)
     print(f"\nFinal bankroll: ${format_money(bankroll)}")
     print("Thanks for playing.")
 
@@ -260,7 +335,11 @@ def compare_hands(player_hand, dealer_hand):
 def play_poker():
     print("\nSimple Five-Card Poker")
     print("----------------------")
-    bankroll = load_bankroll()
+    bankroll, loan_amount, loan_rounds = load_game_state()
+    bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(bankroll, loan_amount, loan_rounds)
+    if not can_play:
+        print("Game over.")
+        return
 
     while bankroll > 0:
         print(f"\nYou have ${format_money(bankroll)}.")
@@ -287,17 +366,21 @@ def play_poker():
             print(f"You lost ${amount}.")
         else:
             print("Push. Nobody wins.")
-        save_bankroll(bankroll)
+        bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)
 
         if bankroll <= 0:
-            print("\nYou are out of money. Game over.")
-            break
+            bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(
+                bankroll, loan_amount, loan_rounds
+            )
+            if not can_play:
+                print("Game over.")
+                break
 
         again = ask_choice("Play another poker hand? (y/n): ", ["y", "n"])
         if again == "n":
             break
 
-    save_bankroll(bankroll)
+    save_game_state(bankroll, loan_amount, loan_rounds)
     print(f"\nFinal bankroll: ${format_money(bankroll)}")
     print("Thanks for playing.")
 
@@ -338,7 +421,11 @@ def show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card):
 def play_blackjack():
     print("\nSimple Blackjack")
     print("----------------")
-    bankroll = load_bankroll()
+    bankroll, loan_amount, loan_rounds = load_game_state()
+    bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(bankroll, loan_amount, loan_rounds)
+    if not can_play:
+        print("Game over.")
+        return
 
     while bankroll > 0:
         print(f"\nYou have ${format_money(bankroll)}.")
@@ -397,18 +484,22 @@ def play_blackjack():
                     print(f"You lost ${amount}.")
                 else:
                     print("Push. Nobody wins.")
-        save_bankroll(bankroll)
+        bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)
 
         if bankroll <= 0:
-            print("\nYou are out of money. Game over.")
-            break
+            bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(
+                bankroll, loan_amount, loan_rounds
+            )
+            if not can_play:
+                print("Game over.")
+                break
 
         again = ask_choice("Play another blackjack hand? (y/n): ", ["y", "n"])
         if again == "n":
             break
 
     print(f"\nFinal bankroll: ${format_money(bankroll)}")
-    save_bankroll(bankroll)
+    save_game_state(bankroll, loan_amount, loan_rounds)
     print("Thanks for playing.")
 
 
@@ -438,7 +529,11 @@ def resolve_slots_spin(reels, amount):
 def play_slots():
     print("\nSimple Slots")
     print("------------")
-    bankroll = load_bankroll()
+    bankroll, loan_amount, loan_rounds = load_game_state()
+    bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(bankroll, loan_amount, loan_rounds)
+    if not can_play:
+        print("Game over.")
+        return
 
     while bankroll > 0:
         print(f"\nYou have ${format_money(bankroll)}.")
@@ -449,7 +544,6 @@ def play_slots():
         reels = spin_slots()
         payout, message = resolve_slots_spin(reels, amount)
         bankroll += payout
-        save_bankroll(bankroll)
 
         print("\nSpinning...")
         print("[ " + " | ".join(reels) + " ]")
@@ -460,16 +554,22 @@ def play_slots():
         else:
             print(f"You lost ${amount}.")
 
+        bankroll, loan_amount, loan_rounds = finish_round(bankroll, loan_amount, loan_rounds)
+
         if bankroll <= 0:
-            print("\nYou are out of money. Game over.")
-            break
+            bankroll, loan_amount, loan_rounds, can_play = offer_loan_if_broke(
+                bankroll, loan_amount, loan_rounds
+            )
+            if not can_play:
+                print("Game over.")
+                break
 
         again = ask_choice("Spin again? (y/n): ", ["y", "n"])
         if again == "n":
             break
 
     print(f"\nFinal bankroll: ${format_money(bankroll)}")
-    save_bankroll(bankroll)
+    save_game_state(bankroll, loan_amount, loan_rounds)
     print("Thanks for playing.")
 
 
