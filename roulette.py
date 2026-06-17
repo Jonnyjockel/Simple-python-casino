@@ -5,6 +5,14 @@ RED_NUMBERS = {
     1, 3, 5, 7, 9, 12, 14, 16, 18,
     19, 21, 23, 25, 27, 30, 32, 34, 36,
 }
+SUITS = ["Hearts", "Diamonds", "Clubs", "Spades"]
+RANKS = list(range(2, 15))
+RANK_NAMES = {
+    11: "Jack",
+    12: "Queen",
+    13: "King",
+    14: "Ace",
+}
 
 
 def color_for(number):
@@ -40,6 +48,16 @@ def ask_choice(prompt, choices):
         if answer in choices:
             return answer
         print(f"Choose one of: {', '.join(sorted(choices))}")
+
+
+def format_card(card):
+    rank, suit = card
+    rank_name = RANK_NAMES.get(rank, str(rank))
+    return f"{rank_name} of {suit}"
+
+
+def format_hand(hand):
+    return ", ".join(format_card(card) for card in hand)
 
 
 def place_bet(bankroll):
@@ -111,26 +129,154 @@ def play_roulette():
     print("Thanks for playing.")
 
 
-def show_coming_soon():
+def build_deck():
+    return [(rank, suit) for suit in SUITS for rank in RANKS]
+
+
+def is_straight(values):
+    unique_values = sorted(set(values))
+    if unique_values == [2, 3, 4, 5, 14]:
+        return True, 5
+
+    if len(unique_values) != 5:
+        return False, None
+
+    low = unique_values[0]
+    high = unique_values[-1]
+    if high - low == 4:
+        return True, high
+
+    return False, None
+
+
+def evaluate_poker_hand(hand):
+    values = sorted((rank for rank, _suit in hand), reverse=True)
+    suits = [suit for _rank, suit in hand]
+    counts = {value: values.count(value) for value in set(values)}
+    count_groups = sorted(counts.items(), key=lambda item: (item[1], item[0]), reverse=True)
+    flush = len(set(suits)) == 1
+    straight, straight_high = is_straight(values)
+
+    if straight and flush:
+        return 8, [straight_high], "Straight Flush"
+    if count_groups[0][1] == 4:
+        four = count_groups[0][0]
+        kicker = max(value for value in values if value != four)
+        return 7, [four, kicker], "Four of a Kind"
+    if count_groups[0][1] == 3 and count_groups[1][1] == 2:
+        return 6, [count_groups[0][0], count_groups[1][0]], "Full House"
+    if flush:
+        return 5, values, "Flush"
+    if straight:
+        return 4, [straight_high], "Straight"
+    if count_groups[0][1] == 3:
+        three = count_groups[0][0]
+        kickers = sorted((value for value in values if value != three), reverse=True)
+        return 3, [three, *kickers], "Three of a Kind"
+
+    pairs = sorted((value for value, count in counts.items() if count == 2), reverse=True)
+    if len(pairs) == 2:
+        kicker = max(value for value in values if value not in pairs)
+        return 2, [*pairs, kicker], "Two Pair"
+    if len(pairs) == 1:
+        pair = pairs[0]
+        kickers = sorted((value for value in values if value != pair), reverse=True)
+        return 1, [pair, *kickers], "One Pair"
+
+    return 0, values, "High Card"
+
+
+def compare_hands(player_hand, dealer_hand):
+    player_score = evaluate_poker_hand(player_hand)
+    dealer_score = evaluate_poker_hand(dealer_hand)
+
+    if player_score[:2] > dealer_score[:2]:
+        return 1, player_score, dealer_score
+    if player_score[:2] < dealer_score[:2]:
+        return -1, player_score, dealer_score
+    return 0, player_score, dealer_score
+
+
+def play_poker():
+    print("\nSimple Five-Card Poker")
+    print("----------------------")
+    bankroll = 100
+
+    while bankroll > 0:
+        print(f"\nYou have ${bankroll}.")
+        amount = ask_int(f"Bet amount (bankroll ${bankroll}): $", 1, bankroll)
+
+        deck = build_deck()
+        random.shuffle(deck)
+        player_hand = deck[:5]
+        dealer_hand = deck[5:10]
+
+        print(f"\nYour hand:   {format_hand(player_hand)}")
+        print(f"Dealer hand: {format_hand(dealer_hand)}")
+
+        result, player_score, dealer_score = compare_hands(player_hand, dealer_hand)
+        print(f"\nYou have:    {player_score[2]}")
+        print(f"Dealer has:  {dealer_score[2]}")
+
+        if result > 0:
+            bankroll += amount
+            print(f"You won ${amount}!")
+        elif result < 0:
+            bankroll -= amount
+            print(f"You lost ${amount}.")
+        else:
+            print("Push. Nobody wins.")
+
+        if bankroll <= 0:
+            print("\nYou are out of money. Game over.")
+            break
+
+        again = ask_choice("Play another poker hand? (y/n): ", ["y", "n"])
+        if again == "n":
+            break
+
+    print(f"\nFinal bankroll: ${bankroll}")
+    print("Thanks for playing.")
+
+
+def show_coming_soon(game_name):
     print("\nComing soon!")
-    print("A new gamemode will be added next to roulette later.")
-    input("Press Enter to return to the main menu...")
+    print(f"{game_name} will be added later.")
+    input("Press Enter to return to the menu...")
+
+
+def show_game_menu():
+    while True:
+        print("\nChoose a Game")
+        print("-------------")
+        print("1. Roulette")
+        print("2. Poker")
+        print("3. Blackjack (coming soon)")
+        print("4. Back")
+
+        choice = ask_choice("Choose an option: ", ["1", "2", "3", "4"])
+
+        if choice == "1":
+            play_roulette()
+        elif choice == "2":
+            play_poker()
+        elif choice == "3":
+            show_coming_soon("Blackjack")
+        else:
+            break
 
 
 def main():
     while True:
         print("\nCasino Main Menu")
         print("----------------")
-        print("1. Play Roulette")
-        print("2. New Gamemode (coming soon)")
-        print("3. Quit")
+        print("1. Play")
+        print("2. Quit")
 
-        choice = ask_choice("Choose an option: ", ["1", "2", "3"])
+        choice = ask_choice("Choose an option: ", ["1", "2"])
 
         if choice == "1":
-            play_roulette()
-        elif choice == "2":
-            show_coming_soon()
+            show_game_menu()
         else:
             print("\nGoodbye.")
             break
