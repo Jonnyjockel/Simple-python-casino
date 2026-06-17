@@ -2,6 +2,10 @@
 
 A small terminal casino game collection written in plain Python.
 
+## Note
+
+This is just a simple game project, not real gambling.
+
 ## Features
 
 - Main menu with a separate game-select screen
