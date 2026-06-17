@@ -88,6 +88,17 @@ def format_hand(hand):
     return ", ".join(format_card(card) for card in hand)
 
 
+def print_hand(label, hand, total=None, hidden_cards=None):
+    print(label)
+    for card in hand:
+        print(f"  - {format_card(card)}")
+    if hidden_cards:
+        for hidden_card in hidden_cards:
+            print(f"  - {hidden_card}")
+    if total is not None:
+        print(f"  Total: {total}")
+
+
 def format_money(amount):
     if amount == int(amount):
         return str(int(amount))
@@ -259,8 +270,9 @@ def play_poker():
         player_hand = deck[:5]
         dealer_hand = deck[5:10]
 
-        print(f"\nYour hand:   {format_hand(player_hand)}")
-        print(f"Dealer hand: {format_hand(dealer_hand)}")
+        print()
+        print_hand("Your hand:", player_hand)
+        print_hand("Dealer hand:", dealer_hand)
 
         result, player_score, dealer_score = compare_hands(player_hand, dealer_hand)
         print(f"\nYou have:    {player_score[2]}")
@@ -314,11 +326,12 @@ def is_blackjack(hand):
 
 
 def show_blackjack_hands(player_hand, dealer_hand, hide_dealer_card):
-    print(f"\nYour hand:   {format_hand(player_hand)} ({blackjack_hand_value(player_hand)})")
+    print()
+    print_hand("Your hand:", player_hand, total=blackjack_hand_value(player_hand))
     if hide_dealer_card:
-        print(f"Dealer hand: {format_card(dealer_hand[0])}, Hidden Card")
+        print_hand("Dealer hand:", [dealer_hand[0]], hidden_cards=["Hidden Card"])
     else:
-        print(f"Dealer hand: {format_hand(dealer_hand)} ({blackjack_hand_value(dealer_hand)})")
+        print_hand("Dealer hand:", dealer_hand, total=blackjack_hand_value(dealer_hand))
 
 
 def play_blackjack():
